@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}New Analysis{% endblock %} | CurriculumMatch</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='branding.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='integration.css') }}">
+</head><body><div class="app sidebar-expanded" id="appShell"><aside class="sidebar">    <button class="crm-sidebar-toggle" id="crmSidebarToggle" type="button" aria-label="Expand navigation" aria-expanded="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM9 5v14M13 9l3 3-3 3"/></svg>
+    </button>
+    <div class="sidebar-brand">
+      <div class="brand-name">CurriculumMatch</div>
+      <div class="brand-sub">Skills Gap Analyser</div>
+    </div>
+
+<nav class="nav" aria-label="Main navigation"><div class="nav-head">Analysis</div>
+<a class="nav-item {% if request.endpoint != 'clusters' %}active{% endif %}" href="{{ url_for('compare') }}" {% if request.endpoint != 'clusters' %}aria-current="page"{% endif %}><span class="nav-dot"></span>New Analysis</a>
+<a class="nav-item {% if request.endpoint == 'clusters' %}active{% endif %}" href="{{ url_for('clusters') }}" {% if request.endpoint == 'clusters' %}aria-current="page"{% endif %}><span class="nav-dot"></span>Clusters</a>
+{# Temporarily disabled original Jobs Word 2 Vec navigation. Restore with its Django routes when needed.
+
+      <div class="nav-section">
+        <div class="nav-head">Overview</div>
+        <a href="{% url 'vector-home' %}" class="nav-item {% if request.resolver_match.url_name == 'vector-home' or request.resolver_match.url_name == 'skill-vector-space' %}active{% endif %}">
+          <span class="nav-dot"></span> Vector Space
+        </a>
+        <a href="{% url 'dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'home' %}active{% endif %}">
+          <span class="nav-dot"></span> Dashboard
+        </a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-head">Curriculum</div>
+        <a href="{% url 'course-list' %}" class="nav-item {% if 'course' in request.resolver_match.url_name %}active{% endif %}">
+          <span class="nav-dot"></span> Courses
+        </a>
+        <a href="{% url 'course-create' %}" class="nav-item">
+          <span class="nav-dot"></span> Add Course
+        </a>
+        <a href="{% url 'course-scraper' %}" class="nav-item {% if request.resolver_match.url_name == 'course-scraper' %}active{% endif %}">
+          <span class="nav-dot"></span> Course Scraper
+        </a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-head">Job Market</div>
+        <a href="{% url 'job-list' %}" class="nav-item {% if request.resolver_match.url_name == 'job-list' %}active{% endif %}">
+          <span class="nav-dot"></span> Job Adverts
+        </a>
+        <a href="{% url 'job-upload' %}" class="nav-item {% if request.resolver_match.url_name == 'job-upload' %}active{% endif %}">
+          <span class="nav-dot"></span> Import Jobs
+        </a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-head">Analysis</div>
+        <a href="{% url 'analysis-results' %}" class="nav-item {% if 'analysis' in request.resolver_match.url_name %}active{% endif %}">
+          <span class="nav-dot"></span> Gap Results
+        </a>
+        <a href="{% url 'control-panel' %}" class="nav-item {% if request.resolver_match.url_name == 'control-panel' %}active{% endif %}">
+          <span class="nav-dot"></span> Control Panel
+        </a>
+        <a href="{% url 'model-validation' %}" class="nav-item {% if request.resolver_match.url_name == 'model-validation' %}active{% endif %}">
+          <span class="nav-dot"></span> Model Validation
+        </a>
+        <a href="{% url 'data-export' %}" class="nav-item {% if 'data-export' in request.resolver_match.url_name or 'skill-entity' in request.resolver_match.url_name or 'job-skill-export' in request.resolver_match.url_name %}active{% endif %}">
+          <span class="nav-dot"></span> Data Export
+        </a>
+        <a href="{% url 'human-oversight' %}" class="nav-item {% if request.resolver_match.url_name == 'human-oversight' %}active{% endif %}">
+          <span class="nav-dot"></span> Human Oversight
+        </a>
+        <a href="{% url 'data-quality-review' %}" class="nav-item {% if request.resolver_match.url_name == 'data-quality-review' %}active{% endif %}">
+          <span class="nav-dot"></span> Data Quality Review
+        </a>
+        <a href="{% url 'rag-chatbot' %}" class="nav-item {% if request.resolver_match.url_name == 'rag-chatbot' %}active{% endif %}">
+          <span class="nav-dot"></span> RAG Chatbot
+        </a>
+        <a href="{% url 'methodology' %}" class="nav-item {% if request.resolver_match.url_name == 'methodology' %}active{% endif %}">
+          <span class="nav-dot"></span> Methodology
+        </a>
+        <a href="{% url 'summary' %}" class="nav-item {% if request.resolver_match.url_name == 'summary' %}active{% endif %}">
+          <span class="nav-dot"></span> Summary
+        </a>
+        <a href="{% url 'task-list' %}" class="nav-item {% if request.resolver_match.url_name == 'task-list' %}active{% endif %}">
+          <span class="nav-dot"></span> Background Tasks
+        </a>
+      </div>
+    
+#}</nav><div class="sidebar-footer">CurriculumMatch</div></aside>
+<div class="main"><header class="topbar"><button class="crm-mobile-menu" id="crmMobileMenu" type="button" aria-label="Open navigation" aria-expanded="false">☰</button><div class="page-title">{{ 'Clusters' if request.endpoint == 'clusters' else 'New Analysis' }}</div></header>
+<main class="content"><div class="top"><nav aria-label="Analysis views">
+      <a href="{{ url_for('compare', level=level) if level else url_for('compare') }}" {% if request.endpoint in ('compare', None) %}aria-current="page"{% endif %}>New Analysis</a>
+      <a href="{{ url_for('modules_index', level=level) if level else url_for('modules_index') }}" {% if request.endpoint in ('modules_index', 'module') %}aria-current="page"{% endif %}>Each {{ words[1] }}</a>
+      <a href="{{ url_for('alignment', level=level) if level else url_for('alignment') }}" {% if request.endpoint == 'alignment' %}aria-current="page"{% endif %}>Job market fit</a>
+      <a href="{{ url_for('method', level=level) if level else url_for('method') }}" {% if request.endpoint == 'method' %}aria-current="page"{% endif %}>How the scores work</a>
+      <span class="levels" aria-label="Analysis scope">Modules only</span>
+    </nav></div>
+{% block content %}{% endblock %}</main></div></div><script>const crmAppShell = document.getElementById('appShell');
+const crmSidebarToggle = document.getElementById('crmSidebarToggle');
+const crmMobileMenu = document.getElementById('crmMobileMenu');
+if (crmAppShell && crmSidebarToggle) {
+  const crmStorageKey = 'curriculumMatchSidebarExpanded';
+  const setCrmSidebar = expanded => {
+    crmAppShell.classList.toggle('sidebar-expanded', expanded);
+    crmSidebarToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    crmSidebarToggle.setAttribute('aria-label', expanded ? 'Collapse navigation' : 'Expand navigation');
+    crmMobileMenu?.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    try { localStorage.setItem(crmStorageKey, expanded ? 'true' : 'false'); } catch (_) {} 
+  };
+  let saved = null; try { saved = localStorage.getItem(crmStorageKey); } catch (_) {} setCrmSidebar(saved === null ? window.innerWidth > 900 : saved === 'true');
+  crmSidebarToggle.addEventListener('click', () => setCrmSidebar(!crmAppShell.classList.contains('sidebar-expanded')));
+  crmMobileMenu?.addEventListener('click', () => setCrmSidebar(!crmAppShell.classList.contains('sidebar-expanded')));
+}
+
+</script></body></html>

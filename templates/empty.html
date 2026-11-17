@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}No results yet{% endblock %}
+{% block content %}
+<section class="prose">
+  {% if error %}
+    <h1>Something needs attention</h1>
+    <p>{{ error }}</p>
+  {% else %}
+    <h1>No results to show yet</h1>
+    <p>This page reads the files that <code>deduplicate.py</code> writes. None were found in:</p>
+    <p class="path">{{ results_dir }}</p>
+    <p>Run the pipeline first, then reload this page:</p>
+    <pre>python deduplicate.py skills_long.csv</pre>
+    <p>It needs at least <code>tfidf_by_module_skill.csv</code> and <code>tfidf_overall_module.csv</code>. To read them from another folder, start the app with <code>python app.py --results-dir "C:\path\to\folder"</code>.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}{{ words[0] }} and the job market{% endblock %}
+{% block content %}
+<section class="intro">
+  <h1>How well the {{ words[2] }} line up with the job market</h1>
+  {% if ready %}
+  <p class="lede">The job text holds {{ '{:,}'.format(summary.job_total) }} skill mentions covering {{ summary.job_skills }} different skills{% if summary.job_chunks %}, spread over {{ summary.job_chunks }} text chunks{% endif %}. A skill counts as taught when at least one {{ words[1] }} has it.</p>
+  {% endif %}
+</section>
+
+{% if not ready %}
+<section class="prose">
+  <p>No job comparison was found for this view. The pipeline writes <code>alignment_skills_{{ level }}.csv</code> and <code>alignment_groups_{{ level }}.csv</code> when the input file marks job rows, by default with <code>source_type = job</code>. Run <code>deduplicate.py</code> again on a file that has job rows and reload this page.</p>
+</section>
+{% else %}
+
+<aside class="caution">
+  <strong>Read this as a first comparison.</strong> Job demand is only as good as the job text behind it. Check that the text is relevant to the programme, that it holds enough separate postings, and that merged skills are true synonyms. A skill counted as taught may be only mentioned, not taught in depth.
+</aside>
+
+<section class="meters">
+  <div class="meter">
+    <h2>Job demand the {{ words[2] }} cover</h2>
+    <div class="split" role="img" aria-label="{{ '%.0f'|format(summary.covered) }} percent covered"><span style="width:{{ '%.1f'|format(summary.covered) }}%"></span></div>
+    <p><strong>{{ '%.0f'|format(summary.covered) }}%</strong> of job skill mentions are on skills that at least one {{ words[1] }} has. The other {{ '%.0f'|format(summary.uncovered) }}% are on skills that no {{ words[1] }} has.</p>
+  </div>
+  <div class="meter">
+    <h2>Module content that appears in the job text</h2>
+    <div class="split" role="img" aria-label="{{ '%.0f'|format(summary.course_in_jobs) }} percent in jobs"><span style="width:{{ '%.1f'|format(summary.course_in_jobs) }}%"></span></div>
+    <p><strong>{{ '%.0f'|format(summary.course_in_jobs) }}%</strong> of the {{ '{:,}'.format(summary.course_total) }} module skill mentions are on skills that the job text also asks for.</p>
+  </div>
+</section>
+
+<section>
+  <h2>{{ words[0] }} one by one</h2>
+  <table class="plain fits">
+    <thead>
+      <tr>
+        <th scope="col">{{ words[0][:-1] }}</th>
+        <th scope="col" class="num">Skills present</th>
+        <th scope="col" class="num">Also in job text</th>
+        <th scope="col" class="barcol">Job demand it covers</th>
+        <th scope="col" class="barcol">Its mentions that are in jobs</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in fits %}
+      <tr>
+        <th scope="row"><a href="{{ f.url }}">{{ f.name }}</a></th>
+        <td class="num">{{ f.present }}</td>
+        <td class="num">{{ f.in_jobs }}</td>
+        <td class="barcol"><div class="hbar"><span style="width:{{ '%.1f'|format(f.covered) }}%"></span></div><span class="barval">{{ '%.0f'|format(f.covered) }}%</span></td>
+        <td class="barcol"><div class="hbar"><span style="width:{{ '%.1f'|format(f.relevant) }}%"></span></div><span class="barval">{{ '%.0f'|format(f.relevant) }}%</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="hint">"Job demand it covers" adds up the job-text share of every skill the {{ words[1] }} has, so the {{ words[2] }} overlap and these figures do not add to 100%. A small {{ words[1] }} has few mentions, so its figures are less reliable.</p>
+</section>
+
+<section>
+  <h2>Skill by skill</h2>
+  <nav class="tabs" aria-label="Skill groups">
+    <a href="{{ status_url('in_demand_not_taught') }}" {% if form.status == 'in_demand_not_taught' %}aria-current="true"{% endif %}>In jobs, not taught <span>{{ summary.n.in_demand_not_taught }}</span></a>
+    <a href="{{ status_url('aligned') }}" {% if form.status == 'aligned' %}aria-current="true"{% endif %}>In jobs and taught <span>{{ summary.n.aligned }}</span></a>
+    <a href="{{ status_url('taught_not_in_jobs') }}" {% if form.status == 'taught_not_in_jobs' %}aria-current="true"{% endif %}>Taught, not in the job text <span>{{ summary.n.taught_not_in_jobs }}</span></a>
+    <a href="{{ status_url('all') }}" {% if form.status == 'all' %}aria-current="true"{% endif %}>All</a>
+  </nav>
+
+  <form class="controls" method="get" action="{{ url_for('alignment') }}">
+    <input type="hidden" name="level" value="{{ form.level }}">
+    <input type="hidden" name="status" value="{{ form.status }}">
+    <label class="field grow">Search skills
+      <input type="search" name="q" value="{{ form.q }}" placeholder="for example: finance">
+    </label>
+    <label class="field">Order by
+      <select name="sort" onchange="this.form.requestSubmit()">
+        {% for k, v in sorts.items() %}<option value="{{ k }}" {% if k == form.sort %}selected{% endif %}>{{ v }}</option>{% endfor %}
+      </select>
+    </label>
+    <button type="submit">Update</button>
+  </form>
+
+  <div class="status">
+    {% if total %}<span>Skills {{ (page - 1) * per_page + 1 }} to {{ [page * per_page, total]|min }} of {{ total }}.</span>{% else %}<span>No skills match.</span>{% endif %}
+    <a href="{{ csv_url }}">Download this list as CSV</a>
+  </div>
+
+  {% if rows %}
+  <div class="tablewrap">
+  <table class="plain skills">
+    <thead>
+      <tr>
+        <th scope="col">Skill</th>
+        <th scope="col" class="barcol">Job demand (share of job mentions)</th>
+        <th scope="col" class="num">Job mentions</th>
+        <th scope="col">Taught in</th>
+        <th scope="col" class="num">Gap score</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <th scope="row"><a href="{{ r.url }}">{{ r.name }}</a></th>
+        <td class="barcol">
+          {% if r.job_mentions %}
+            <div class="hbar"><span style="width:{{ '%.1f'|format(r.demand_w) }}%"></span></div>
+            <span class="barval">{{ r.job_share|pct }}</span>
+          {% else %}<span class="barval sub">not in job text</span>{% endif %}
+        </td>
+        <td class="num">{{ r.job_mentions }}{% if r.job_chunks %} <span class="sub">in {{ r.job_chunks }} chunks</span>{% endif %}</td>
+        <td>
+          <div class="strip" role="img" aria-label="Taught in {{ r.taught_in }} of {{ ds.n_groups }} {{ words[2] }}">
+            {% for c in r.strip %}<a class="{{ 'on' if c.n else 'off' }}" href="{{ c.url }}" title="{{ c.g }}: {{ (c.n ~ ' mention' ~ ('s' if c.n != 1 else '')) if c.n else 'not present' }}"></a>{% endfor %}
+          </div>
+          <span class="sub">{{ r.taught_in }} of {{ ds.n_groups }}</span>
+        </td>
+        <td class="num">{% if r.job_mentions %}{{ '%.4f'|format(r.gap) }}{% else %}<span class="sub">n/a</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  {% if pages > 1 %}
+  <nav class="pager" aria-label="Pages">
+    {% if page > 1 %}<a href="{{ page_url(page - 1) }}" rel="prev">Previous</a>{% endif %}
+    <span>Page {{ page }} of {{ pages }}</span>
+    {% if page < pages %}<a href="{{ page_url(page + 1) }}" rel="next">Next</a>{% endif %}
+  </nav>
+  {% endif %}
+  <p class="hint">Each small square is one {{ words[1] }}: filled means the skill is present there (hover for the count). Gap score = the skill's share of job mentions x the fraction of {{ words[2] }} that do not have it, so a skill that employers ask for often and few {{ words[2] }} carry ranks highest.</p>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

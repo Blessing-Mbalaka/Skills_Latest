@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}How the scores work{% endblock %}
+{% block content %}
+{% set w = words[1] %}
+{% set ws = words[2] %}
+<section class="prose">
+  <h1>How the scores work</h1>
+  <p>Every {{ w }} is treated as one document made of the skills extracted from it. A skill's synonyms have already been merged by the clustering step, so "python" and "python scripting" count as one skill.</p>
+
+  <h2>Within one {{ w }}</h2>
+  <dl class="formulas">
+    <dt>TF</dt>
+    <dd>times the skill appears in the {{ w }} / all skill mentions in that {{ w }}. It is the skill's share of the {{ w }}.</dd>
+    <dt>Lift</dt>
+    <dd>TF / average TF. Above 1 means this {{ w }} gives the skill more room than the average {{ w }} does.</dd>
+  </dl>
+
+  <h2>Across all {{ ws }}</h2>
+  <dl class="formulas">
+    <dt>Average TF</dt>
+    <dd>the mean of the skill's TF over all {{ ws }}, counting 0 where it is absent. Large and small {{ ws }} count equally.</dd>
+    <dt>Smoothed IDF</dt>
+    <dd>ln((1 + M) / (1 + df)) + 1, where M is the number of {{ ws }}{% if ds %} ({{ ds.n_groups }} here){% endif %} and df is how many contain the skill. It is never 0.</dd>
+    <dt>Score</dt>
+    <dd>average TF x smoothed IDF. One number per skill, so skills can be ranked and compared across all {{ ws }}.</dd>
+    <dt>TF-IDF</dt>
+    <dd>TF x ln(M / df). Useful for finding what makes one {{ w }} different from the others. A skill found in every {{ w }} scores 0, which does not mean it is absent.</dd>
+  </dl>
+
+  <h2>Modules against the job market</h2>
+  <dl class="formulas">
+    <dt>Job demand</dt>
+    <dd>times the skill is mentioned in the job text / all skill mentions in the job text. Job text chunks containing the skill are also counted, to show how widespread it is.</dd>
+    <dt>Taught</dt>
+    <dd>a skill counts as taught when at least one {{ w }} has it. Breadth is the fraction of {{ ws }} that have it, not how deeply it is covered.</dd>
+    <dt>Job demand covered</dt>
+    <dd>adds up the job demand of all skills a {{ w }} has (or, overall, all skills that any {{ w }} has). It is the share of what the job text asks for that the {{ w }} touches.</dd>
+    <dt>Mentions in jobs</dt>
+    <dd>the share of a {{ w }}'s own skill mentions that are on skills the job text also asks for.</dd>
+    <dt>Gap score</dt>
+    <dd>job demand x (1 - fraction of {{ ws }} that have the skill). It is highest for skills employers ask for often that few {{ ws }} carry, and 0 for skills not in the job text.</dd>
+  </dl>
+
+  <h2>Which one answers which question</h2>
+  <table class="plain">
+    <thead><tr><th scope="col">Question</th><th scope="col">Use</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Which skills matter most across everything?</th><td>Score, or average TF</td></tr>
+      <tr><th scope="row">Where is one skill emphasised most?</th><td>TF or lift for that skill (the skill page)</td></tr>
+      <tr><th scope="row">What is this {{ w }} known for?</th><td>TF-IDF or lift (the {{ w }} page)</td></tr>
+      <tr><th scope="row">Which skills do employers ask for that we do not teach?</th><td>Gap score and the "In jobs, not taught" list (Job market fit)</td></tr>
+      <tr><th scope="row">Is a skill present at all?</th><td>The "In" column and the mention counts</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Read with care</h2>
+  <ul>
+    <li>A mention is not evidence of how deeply something is taught. The extraction recorded no proficiency level.</li>
+    <li>Small {{ ws }} give noisy shares: a skill mentioned once in a {{ w }} with 50 mentions looks as large as a skill mentioned 10 times in a {{ w }} with 500.</li>
+    <li>The job comparison depends on the job text. If it holds few postings or roles unrelated to the programme, the figures describe that text, not the job market.</li>
+    <li>Job rows and module rows are clustered together, so a wrong merge of two different skills can create a false match between a module and a job.</li>
+    <li>Only module material is scored here. Job postings take part in the clustering but have no {{ w }}, so they are not in these tables.</li>
+    <li>Skills are extracted by a language model and merged by an embedding threshold, so both steps can add errors.</li>
+  </ul>
+</section>
+{% endblock %}

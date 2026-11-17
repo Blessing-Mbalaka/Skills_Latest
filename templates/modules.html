@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Each {{ words[1] }}{% endblock %}
+{% block content %}
+<section class="intro">
+  <h1>Pick a {{ words[1] }} to analyse its skills</h1>
+  <p class="lede">{{ ds.n_groups }} {{ words[2] }}, {{ '{:,}'.format(ds.n_mentions) }} skill mentions in total. Open one to see every skill in it, ordered, searched and compared with the other {{ words[2] }}.</p>
+</section>
+
+<table class="plain overview">
+  <thead>
+    <tr>
+      <th scope="col">{{ words[0][:-1] }}</th>
+      <th scope="col" class="num">Skill mentions</th>
+      <th scope="col" class="num">Skills present</th>
+      <th scope="col" class="num">Only in this {{ words[1] }}</th>
+      {% if has_align %}<th scope="col" class="num">Job demand covered</th>{% endif %}
+      <th scope="col">Largest share</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <th scope="row"><a href="{{ r.url }}">{{ r.name }}</a></th>
+      <td class="num">{{ '{:,}'.format(r.mentions) }}</td>
+      <td class="num">{{ r.skills }} <span class="sub">of {{ ds.n_skills }} ({{ '%.0f'|format(r.coverage) }}%)</span></td>
+      <td class="num">{{ r.only }}</td>
+      {% if has_align %}<td class="num">{{ '%.0f'|format(r.demand) }}%</td>{% endif %}
+      <td class="sub">{{ r.top|join(', ') }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p class="hint">"Only in this {{ words[1] }}" counts skills that no other {{ words[1] }} has. Small {{ words[2] }} have few mentions, so their shares are less reliable.</p>
+{% endblock %}

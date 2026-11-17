@@ -1,0 +1,11 @@
+/* Adapt the original analysis controls to the copied CurriculumMatch branding. */
+:root { --paper:var(--crm-canvas); --panel:#fff; --ink:#123426; --muted:#52665b; --rule:var(--crm-border); --heat-light:#e7f5ea; --heat-dark:#0f3727; --focus:#17823b; --hover:#e6f0e2; --display:"Segoe UI",sans-serif; }
+.main { min-width:0; } main.content { width:100%; max-width:1680px; min-width:0; }
+.top { padding:0 0 18px; margin-bottom:24px; background:transparent; }
+.top nav { gap:20px; } .topbar .page-title { margin-right:auto; }
+button { background:var(--crm-deep-green); color:#fff; border-radius:999px; } button:hover { background:#1e5a41; }
+.sidebar .crm-sidebar-toggle:hover,.sidebar .nav-item:hover { background:rgba(255,255,255,.12); }
+.sidebar .nav-item { text-decoration:none; } .sidebar .brand-name { line-height:1.4; }
+h1,h2,p { margin-bottom:.6rem; } .controls { margin-bottom:12px; }
+.cluster-list { display:grid; gap:16px; margin-top:20px; } .cluster-list summary { cursor:pointer; padding:8px; font-weight:600; } .cluster-list .card { padding:18px; } .cluster-list ul { padding-left:24px; columns:2; } .cluster-list li { break-inside:avoid; padding:4px; }
+@media(max-width:900px) { .cluster-list ul { columns:1; } main.content { padding:22px 14px 34px; } }

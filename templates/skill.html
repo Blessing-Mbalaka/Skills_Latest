@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}{{ skill }}{% endblock %}
+{% block content %}
+<p class="crumb"><a href="{{ back }}">All skills</a></p>
+<section class="intro">
+  <h1 class="skill-title">{{ skill }}</h1>
+  <p class="lede">Found in {{ info.df }} of {{ info.M }} {{ words[2] }}, {{ info.total }} mention{{ 's' if info.total != 1 }} in total. {% if info.rank %}It ranks {{ info.rank }} of {{ '{:,}'.format(info.of) }} skills by score.{% endif %}</p>
+</section>
+
+<section class="presence">
+  <h2>Where it is present</h2>
+  <div class="presence-line">
+    <span class="plabel">Present in {{ info.present|length }}</span>
+    <div class="alsoin">{% for p in info.present %}<a href="{{ p.url }}" title="{{ p.count }} mention{{ 's' if p.count != 1 }}">{{ p.name }} <span class="n">{{ p.count }}</span></a>{% else %}<span class="sub">none</span>{% endfor %}</div>
+  </div>
+  <div class="presence-line">
+    <span class="plabel">Not present in {{ info.absent|length }}</span>
+    <div class="alsoin absent-list">{% for p in info.absent %}<a href="{{ p.url }}">{{ p.name }}</a>{% else %}<span class="sub">none, it is in every {{ words[1] }}</span>{% endfor %}</div>
+  </div>
+</section>
+
+{% if job %}
+<section class="presence">
+  <h2>In the job market</h2>
+  <div class="presence-line">
+    <span class="plabel">Job text</span>
+    <div>
+      {% if job.mentions %}
+        Mentioned {{ job.mentions }} time{{ 's' if job.mentions != 1 }}, {{ job.share|pct }} of all skill mentions in the job text{% if job.chunks %}, in {{ job.chunks }} of {{ job.chunk_total }} text chunks{% endif %}.
+      {% else %}
+        Not found in the job text.
+      {% endif %}
+    </div>
+  </div>
+  <div class="presence-line">
+    <span class="plabel">Against the {{ words[2] }}</span>
+    <div>
+      {% if job.status == 'in_demand_not_taught' %}
+        <strong>No {{ words[1] }} has this skill.</strong> It is a gap: gap score {{ '%.4f'|format(job.gap) }}.
+      {% elif job.status == 'aligned' %}
+        Present in {{ info.df }} of {{ info.M }} {{ words[2] }}. Gap score {{ '%.4f'|format(job.gap) }} (job share x the share of {{ words[2] }} that lack it).
+      {% else %}
+        Taught in {{ info.df }} of {{ info.M }} {{ words[2] }}, but not found in the job text.
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% if info.df %}
+<section class="build">
+  <h2>How the score is built</h2>
+  <dl>
+    <dt>Average TF</dt>
+    <dd>Add up the skill's TF in all {{ info.M }} {{ words[2] }} (zero where it is absent) and divide by {{ info.M }}. Every {{ words[1] }} counts equally, whatever its size.
+      <strong>= {{ '%.4f'|format(info.share) }}</strong> ({{ (info.share * 100)|round(2) }}% of a typical {{ words[1] }}'s mentions)</dd>
+    <dt>Smoothed IDF</dt>
+    <dd>ln((1 + {{ info.M }}) / (1 + {{ info.df }})) + 1, so a skill present everywhere still keeps a weight of 1.
+      <strong>= {{ '%.3f'|format(info.idf_smooth) }}</strong></dd>
+    <dt>Score</dt>
+    <dd>Average TF x smoothed IDF = {{ '%.4f'|format(info.share) }} x {{ '%.3f'|format(info.idf_smooth) }}
+      <strong>= {{ '%.4f'|format(info.score) }}</strong></dd>
+  </dl>
+</section>
+
+{% endif %}
+
+<section>
+  <h2>{{ words[0] }} compared</h2>
+  <table class="plain">
+    <thead>
+      <tr>
+        <th scope="col">{{ words[0][:-1] }}</th>
+        <th scope="col" class="barcol">Share of its skill mentions (TF)</th>
+        <th scope="col" class="num">Mentions</th>
+        <th scope="col" class="num">Lift</th>
+        <th scope="col" class="num">TF-IDF</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in per %}
+      <tr class="{{ 'dim' if p.count == 0 }}">
+        <th scope="row"><a href="{{ p.url }}">{{ p.name }}</a></th>
+        <td class="barcol">
+          {% if p.count %}
+            <div class="hbar"><span style="width:{{ '%.1f'|format(p.width) }}%"></span></div>
+            <span class="barval">{{ p.tf|pct }}</span>
+          {% else %}
+            <span class="barval">not present</span>
+          {% endif %}
+        </td>
+        <td class="num">{{ p.count }} of {{ '{:,}'.format(p.size) }}</td>
+        <td class="num {{ 'strong' if p.emphasised }}">{% if p.count %}{{ '%.1f'|format(p.lift) }}x{% endif %}{% if p.emphasised %} <span class="dot" title="At least twice the average share, from 2 or more mentions"></span>{% endif %}</td>
+        <td class="num">{% if p.count %}{{ '%.3f'|format(p.tf_idf) }}{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="hint">Lift is the {{ words[1] }}'s TF divided by the average TF above. A gold dot marks a lift of 2 or more with at least 2 mentions.</p>
+</section>
+
+{% if synonyms %}
+<section>
+  <h2>Wording merged into this skill</h2>
+  <p class="hint">The clustering step treated these labels as the same skill.</p>
+  <ul class="chips">
+    {% for s in synonyms %}<li>{{ s }}</li>{% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

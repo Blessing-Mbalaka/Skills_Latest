@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Skills across {{ words[2] }}{% endblock %}
+{% block content %}
+<section class="intro">
+  <h1>Which skills appear in which {{ words[1] }}</h1>
+  <p class="lede">{{ ds.n_groups }} {{ words[2] }} share {{ '{:,}'.format(ds.n_skills) }} skills across {{ '{:,}'.format(ds.n_mentions) }} skill mentions. Each row is one skill, each column one {{ words[1] }}. A filled cell means the skill is present in that {{ words[1] }}; a hatched cell means it is not. Open a skill to see how its score is built, or a {{ words[1] }} to see what it is known for.</p>
+</section>
+
+<form class="controls" method="get" action="{{ url_for('compare') }}">
+  <input type="hidden" name="level" value="{{ form.level }}">
+  <label class="field grow">Search skills
+    <input type="search" name="q" value="{{ form.q }}" placeholder="for example: python">
+  </label>
+  <label class="field">Cell shows
+    <select name="metric" onchange="this.form.requestSubmit()">
+      {% for k, v in metrics.items() %}<option value="{{ k }}" {% if k == form.metric %}selected{% endif %}>{{ v }}</option>{% endfor %}
+    </select>
+  </label>
+  <label class="field">Order rows by
+    <select name="sort" onchange="this.form.requestSubmit()">
+      {% for k, v in sorts.items() %}<option value="{{ k }}" {% if k == form.sort %}selected{% endif %}>{{ v }}</option>{% endfor %}
+    </select>
+  </label>
+  <label class="field narrow">Rows
+    <select name="n" onchange="this.form.requestSubmit()">
+      {% for v in [20, 25, 50, 100, "all"] %}<option value="{{ v }}" {% if v == form.n %}selected{% endif %}>{{ v }}</option>{% endfor %}
+    </select>
+  </label>
+  <label class="field narrow">In at least
+    <input type="number" name="min_cov" min="1" max="{{ ds.n_groups }}" value="{{ form.min_cov }}" aria-describedby="min-help">
+  </label>
+  <button type="submit">Update</button>
+</form>
+<p id="min-help" class="hint">"In at least" keeps only skills found in that many {{ words[2] }} or more.</p>
+
+<div class="status">
+  <span>Showing {{ rows|length }} of {{ '{:,}'.format(total) }} matching skills.</span>
+  <a href="{{ csv_url }}">Download these rows as CSV</a>
+</div>
+
+{% if rows %}
+<div class="matrix-wrap" role="region" aria-label="Skill by {{ words[1] }} grid" tabindex="0">
+  <table class="matrix">
+    <caption class="sr">{{ metrics[form.metric] }} for each skill in each {{ words[1] }}</caption>
+    <thead>
+      <tr>
+        <th class="skill corner" scope="col">Skill</th>
+        {% for c in cols %}
+          <th class="mod" scope="col"><a href="{{ c.url }}" title="Open {{ c.name }}"><span>{{ c.name }}</span></a></th>
+        {% endfor %}
+        <th class="num" scope="col">In</th>
+        {% if has_align %}<th class="num" scope="col">Jobs</th>{% endif %}
+        <th class="num wide" scope="col">Score</th>
+      </tr>
+      <tr class="sizes">
+        <th class="skill" scope="row">Skill mentions in the {{ words[1] }}</th>
+        {% for c in cols %}<td>{{ '{:,}'.format(c.size) }}</td>{% endfor %}
+        <td></td>{% if has_align %}<td></td>{% endif %}<td></td>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <th class="skill" scope="row"><a href="{{ r.url }}" title="{{ r.name }}">{{ r.name }}</a></th>
+        {% for c in r.cells %}
+          <td class="cell{% if c.absent %} absent{% endif %}{% if c.mark %} mark{% endif %}"
+              {% if not c.absent %}style="background:{{ c.bg }};color:{{ c.fg }}"{% endif %}
+              title="{{ c.title }}">{{ c.text }}</td>
+        {% endfor %}
+        <td class="num">{{ r.coverage }}/{{ ds.n_groups }}</td>
+        {% if has_align %}<td class="num">{% if r.job_share %}{{ r.job_share|pct }}{% else %}<span class="sub">none</span>{% endif %}</td>{% endif %}
+        <td class="num score"><span class="bar" style="width:{{ '%.1f'|format(r.score_w) }}%"></span><span class="val">{{ '%.3f'|format(r.score) }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="legend" aria-label="How to read the grid">
+  {% if form.metric == 'presence' %}
+  <p><span class="swatch present-sw"></span>Filled: the skill is present in that {{ words[1] }}. The number is how many times it was mentioned.</p>
+  {% else %}
+  <div class="ramp"><span>smaller</span><i></i><span>larger</span></div>
+  {% endif %}
+  {% if has_align %}<p>The Jobs column is the skill's share of all skill mentions in the job text.</p>{% endif %}
+  <p><span class="swatch absent-sw"></span>Hatched: the skill was not found in that {{ words[1] }}.</p>
+  {% if form.metric != 'presence' %}
+  <p><span class="swatch mark-sw"></span>Gold corner: the {{ words[1] }} gives the skill at least twice its average share, based on 2 or more mentions.</p>
+  <p>Colour is scaled to the larger values in the rows shown, so compare shades within one view, not between views.</p>
+  {% endif %}
+</div>
+{% else %}
+  <p class="prose-note">No skills match these filters. Clear the search or lower "In at least".</p>
+{% endif %}
+{% endblock %}
